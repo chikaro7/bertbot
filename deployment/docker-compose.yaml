@@ -1,0 +1,50 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://bertbot:8000/api  # Points to backend service in the container network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: "mysecretkey"  # Django secret key 
+      DB_HOST: "mysql"  # mysql service name
+      DB_NAME: "bertbot"  #  database
+      DB_USER: "root"  # MySQL user
+      DB_PASSWORD: "rootpassword"  # MySQL root password
+      RABBITMQ_HOST: "rabbitmq"  # rabbitmq
+      RABBITMQ_USER: "guest"  # RabbitMQ user (default)
+      RABBITMQ_PASSWORD: "guest"  # RabbitMQ password (default)
+    depends_on:
+      - mysql
+      - rabbitmq
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: bertbot
+    ports:
+      - "3306:3306"
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"  # RabbitMQ Management Console
+      - "5672:5672"    # RabbitMQ Default port
+
+  # Frontend and Backend on separate networks
+  networks:
+    default:
+      external:
+        name: bertbot-network
